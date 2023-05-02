@@ -1,16 +1,7 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Length,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+import { LoginDto } from './login.dto';
 
-export class RegisterDto {
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
-
+export class RegisterDto extends LoginDto {
   @IsNotEmpty()
   @IsString()
   @Length(3)
@@ -21,8 +12,4 @@ export class RegisterDto {
 
   @IsOptional()
   bgImage: string;
-
-  @IsNotEmpty()
-  @Length(8, 20, { message: 'Password has to be at between 8 and 20 chars' })
-  password: string;
 }

@@ -1,8 +1,20 @@
-import { Controller, Get, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtGuard } from 'src/guard/jwt.guard';
+import { GetUser } from 'src/utils/get-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller('users')
+@UseGuards(JwtGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -12,7 +24,8 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string, @GetUser() user: User) {
+    console.log('user: ', user);
     return this.usersService.findOne(id);
   }
 
