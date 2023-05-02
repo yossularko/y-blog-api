@@ -12,4 +12,7 @@ export class RegisterDto extends LoginDto {
 
   @IsOptional()
   bgImage: string;
+
+  @IsOptional()
+  role: number;
 }

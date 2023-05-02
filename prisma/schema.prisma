@@ -26,6 +26,7 @@ model User {
   hashedPassword  String
   avaImage        String?
   bgImage         String?
+  role            Int?      @default(0) // 1 administrator, 0 user
 
   refreshTokens   RefreshToken[]
 
