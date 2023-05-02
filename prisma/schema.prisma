@@ -22,6 +22,7 @@ model RefreshToken {
 model User {
   id              String    @unique   @default(uuid())
   email           String    @unique
+  name            String
   hashedPassword  String
   avaImage        String?
   bgImage         String?
