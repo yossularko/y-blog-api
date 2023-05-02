@@ -1,26 +1,74 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { User } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(private readonly prismaService: PrismaService) {}
+
+  async findAll() {
+    return await this.prismaService.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avaImage: true,
+        bgImage: true,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findOne(id: string): Promise<User> {
+    const item = await this.prismaService.user.findUnique({ where: { id } });
+
+    if (!item) {
+      // optional, you can return null/undefined depending on your use case
+      throw new NotFoundException(`Item id ${id} is not found`);
+    }
+
+    delete item.hashedPassword;
+
+    return item;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const { name, email, avaImage, bgImage } = updateUserDto;
+    try {
+      return await this.prismaService.user.update({
+        where: { id },
+        data: {
+          name,
+          email,
+          avaImage,
+          bgImage,
+        },
+      });
+    } catch (error) {
+      if (error.code) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(error.meta?.cause);
+        }
+      }
+      throw new InternalServerErrorException(error);
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    try {
+      await this.prismaService.user.delete({ where: { id } });
+      return { message: `User id: ${id} was deleted` };
+    } catch (error) {
+      if (error.code) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(error.meta?.cause);
+        }
+      }
+      throw new InternalServerErrorException(error);
+    }
   }
 }
