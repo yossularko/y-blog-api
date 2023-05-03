@@ -2,16 +2,22 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { allowedRole } from 'src/utils/allowedRole';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findAll() {
+  async findAll(user: User) {
+    if (!allowedRole([1], user.role)) {
+      throw new ForbiddenException('You are not allowed');
+    }
+
     return await this.prismaService.user.findMany({
       select: {
         id: true,
@@ -19,6 +25,7 @@ export class UsersService {
         name: true,
         avaImage: true,
         bgImage: true,
+        role: true,
       },
     });
   }
