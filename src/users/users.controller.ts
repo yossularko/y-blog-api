@@ -12,17 +12,12 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from 'src/auth/roles/roles.decorator';
 import { RolesGuard } from 'src/auth/roles/roles.guard';
 import { JwtGuard } from 'src/auth/jwt/jwt.guard';
-import { ConfigService } from 'src/config/config.service';
-import { GetUser } from './get-user.decorator';
-import { User } from '@prisma/client';
+import { IsUserGuard } from 'src/auth/is-user/is-user.guard';
 
 @Controller('users')
 @UseGuards(JwtGuard)
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Roles(1)
   @UseGuards(RolesGuard)
@@ -31,28 +26,18 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Roles(1)
+  @UseGuards(IsUserGuard) // Guard to detect current user or not with registered role exception
   @Get(':id')
-  findOne(@Param('id') id: string, @GetUser() user: User) {
-    return this.configService.validatePermission({
-      roles: [1],
-      currRole: user.role,
-      isCurrUser: user.id === id,
-      data: this.usersService.findOne(id),
-    });
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
+  @Roles(1)
+  @UseGuards(IsUserGuard)
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-    @GetUser() user: User,
-  ) {
-    return this.configService.validatePermission({
-      roles: [1],
-      currRole: user.role,
-      isCurrUser: user.id === id,
-      data: this.usersService.update(id, updateUserDto),
-    });
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Roles(1)
