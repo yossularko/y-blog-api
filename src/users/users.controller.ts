@@ -10,8 +10,6 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtGuard } from 'src/guard/jwt.guard';
-import { GetUser } from 'src/utils/get-user.decorator';
-import { User } from '@prisma/client';
 
 @Controller('users')
 @UseGuards(JwtGuard)
@@ -19,8 +17,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.usersService.findAll(user);
+  findAll() {
+    return this.usersService.findAll();
   }
 
   @Get(':id')
