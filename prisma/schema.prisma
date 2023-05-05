@@ -13,11 +13,10 @@ datasource db {
 model User {
   id              String    @unique   @default(uuid())
   email           String    @unique
-  name            String
   hashedPassword  String
-  avaImage        String?
-  bgImage         String?
   role            Int?      @default(0) // 1 administrator, 0 user
+
+  profile         Profile?
 
   refreshTokens   RefreshToken[]
   articles        Article[]
@@ -36,6 +35,28 @@ model RefreshToken {
   userId          String? // id for user who is associated with this refresh token
 }
 
+model Profile {
+  id              String    @unique   @default(uuid())
+  name            String
+  bio             String?   @db.Text
+  avaImage        String?
+  bgImage         String?
+
+  User            User?     @relation(fields: [userEmail], references: [email])
+  userEmail       String    @unique
+}
+
+model Category {
+  id              String    @unique   @default(uuid())
+  name            String
+  image           String
+
+  articles        Article[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt()
+}
+
 model Article {
   id              String    @unique   @default(uuid())
   title           String
@@ -43,6 +64,9 @@ model Article {
   coverImage      String
 
   comments        Comment[]
+
+  Category        Category?     @relation(fields: [categoryId], references: [id])
+  categoryId      String?
 
   Author          User?     @relation(fields: [authorId], references: [id])
   authorId        String?

@@ -16,10 +16,8 @@ export class UsersService {
       select: {
         id: true,
         email: true,
-        name: true,
-        avaImage: true,
-        bgImage: true,
         role: true,
+        profile: true,
       },
     });
   }
@@ -38,17 +36,11 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const { name, email, avaImage, bgImage, role } = updateUserDto;
+    const { email, role } = updateUserDto;
     try {
       return await this.prismaService.user.update({
         where: { id },
-        data: {
-          name,
-          email,
-          avaImage,
-          bgImage,
-          role,
-        },
+        data: { email, role },
       });
     } catch (error) {
       if (error.code) {
