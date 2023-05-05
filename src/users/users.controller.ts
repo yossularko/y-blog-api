@@ -9,10 +9,10 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Roles } from 'src/auth/roles/roles.decorator';
-import { RolesGuard } from 'src/auth/roles/roles.guard';
-import { JwtGuard } from 'src/auth/jwt/jwt.guard';
-import { IsUserGuard } from 'src/auth/is-user/is-user.guard';
+import { JwtGuard } from 'src/common/guard/jwt.guard';
+import { Roles } from 'src/common/decorator/roles.decorator';
+import { RolesGuard } from 'src/common/guard/roles.guard';
+import { IsUserGuard } from 'src/common/guard/is-user.guard';
 
 @Controller('users')
 @UseGuards(JwtGuard)
