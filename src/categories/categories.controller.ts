@@ -25,12 +25,11 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @ApiTags('Category')
 @Controller('categories')
-@UseGuards(JwtGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Roles(1)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtGuard, RolesGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   create(
@@ -59,7 +58,7 @@ export class CategoriesController {
   }
 
   @Roles(1)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtGuard, RolesGuard)
   @Patch(':id')
   @UseInterceptors(FileInterceptor('file'))
   update(
@@ -79,7 +78,7 @@ export class CategoriesController {
   }
 
   @Roles(1)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtGuard, RolesGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(id);
