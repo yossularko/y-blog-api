@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { MulterModule } from '@nestjs/platform-express';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -10,7 +9,6 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { CategoriesModule } from './categories/categories.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { configFileInterceptor } from './utils/configFileInterceptor';
 
 @Module({
   imports: [
@@ -18,7 +16,6 @@ import { configFileInterceptor } from './utils/configFileInterceptor';
       rootPath: join(__dirname, '..', 'public'),
       exclude: ['/api/(.*)'],
     }),
-    MulterModule.register(configFileInterceptor()),
     PrismaModule,
     UsersModule,
     AuthModule,
