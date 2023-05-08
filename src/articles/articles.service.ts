@@ -38,15 +38,45 @@ export class ArticlesService {
 
   async findAll(user: User): Promise<Article[]> {
     if (user.role === 1) {
-      return this.prismaService.article.findMany();
+      return await this.prismaService.article.findMany({
+        include: {
+          Category: { select: { id: true, name: true, image: true } },
+        },
+      });
     }
-    return this.prismaService.article.findMany({
+    return await this.prismaService.article.findMany({
       where: { authorId: user.id },
+      include: { Category: { select: { id: true, name: true, image: true } } },
     });
   }
 
   async findOne(id: string): Promise<Article> {
-    return this.prismaService.article.findUnique({ where: { id } });
+    const response = await this.prismaService.article.findUnique({
+      where: { id },
+      include: {
+        Category: { select: { id: true, name: true, image: true } },
+        Author: { select: { id: true, profile: true } },
+        comments: {
+          select: {
+            id: true,
+            body: true,
+            images: true,
+            createdAt: true,
+            User: {
+              select: {
+                id: true,
+                profile: { select: { name: true, avaImage: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    delete response.authorId;
+    delete response.categoryId;
+
+    return response;
   }
 
   async update(
