@@ -27,10 +27,10 @@ import { UpdateArticleDto } from './dto/update-article.dto';
 
 @ApiTags('Article')
 @Controller('articles')
-@UseGuards(JwtGuard)
 export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
+  @UseGuards(JwtGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   create(
@@ -50,8 +50,14 @@ export class ArticlesController {
   }
 
   @Get()
-  findAll(@GetUser() user: User) {
-    return this.articlesService.findAll(user);
+  findAll() {
+    return this.articlesService.findAll();
+  }
+
+  @UseGuards(JwtGuard)
+  @Get()
+  findAllByUser(@GetUser() user: User) {
+    return this.articlesService.findAllByUser(user);
   }
 
   @Get(':id')
@@ -60,7 +66,7 @@ export class ArticlesController {
   }
 
   @Roles(1)
-  @UseGuards(IsUserGuard)
+  @UseGuards(JwtGuard, IsUserGuard)
   @Patch(':id')
   @UseInterceptors(FileInterceptor('file'))
   update(
@@ -73,7 +79,7 @@ export class ArticlesController {
   }
 
   @Roles(1)
-  @UseGuards(IsUserGuard)
+  @UseGuards(JwtGuard, IsUserGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.articlesService.remove(id);

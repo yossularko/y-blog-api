@@ -36,7 +36,13 @@ export class ArticlesService {
     }
   }
 
-  async findAll(user: User): Promise<Article[]> {
+  async findAll(): Promise<Article[]> {
+    return await this.prismaService.article.findMany({
+      include: { Category: { select: { id: true, name: true, image: true } } },
+    });
+  }
+
+  async findAllByUser(user: User): Promise<Article[]> {
     if (user.role === 1) {
       return await this.prismaService.article.findMany({
         include: {
