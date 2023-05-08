@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -12,6 +13,10 @@ import { LoginDto } from './dto/login.dto';
 import { CookieOptions, Response } from 'express';
 import { refreshTokenConfig } from 'src/config/jwt.config';
 import { jwtKey } from 'src/utils/constant';
+import { TokenExpiredError } from 'jsonwebtoken';
+import { LoginRes } from './interface/login-res.interface';
+import { RefreshAccessTokenDto } from './dto/refresh-access-token.dto';
+import { RefreshTokenRes } from './interface/refresh-token-res.interface';
 
 @Injectable()
 export class AuthService {
@@ -42,7 +47,11 @@ export class AuthService {
     });
   }
 
-  async signIn(loginDto: LoginDto, isMobile: string, res: Response) {
+  async signIn(
+    loginDto: LoginDto,
+    isMobile: string,
+    res: Response,
+  ): Promise<LoginRes> {
     const { email, password } = loginDto;
 
     const foundUser = await this.prismaService.user.findUnique({
@@ -74,6 +83,37 @@ export class AuthService {
     return { access_token: '', refresh_token };
   }
 
+  async refreshAccessToken(
+    refreshAccessTokenDto: RefreshAccessTokenDto,
+    isMobile: string,
+    response: Response,
+  ): Promise<RefreshTokenRes> {
+    const { refresh_token } = refreshAccessTokenDto;
+    const payload = await this.decodeToken(refresh_token);
+    const refreshToken = await this.prismaService.refreshToken.findUnique({
+      where: { id: payload.jid },
+      include: { User: true },
+    });
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is not found');
+    }
+
+    if (refreshToken.isRevoked) {
+      throw new UnauthorizedException('Refresh token has been revoked');
+    }
+
+    const access_token = await this.createAccessToken(refreshToken.User);
+
+    if (isMobile === 'true') {
+      return { access_token };
+    }
+
+    response.cookie('jwt_auth', access_token, this.configCookie(true));
+
+    return { access_token: '' };
+  }
+
   async hashPassword(password: string) {
     const saltOrRounds = 10;
     const hashed = await bcrypt.hash(password, saltOrRounds);
@@ -84,6 +124,18 @@ export class AuthService {
   async comparePasswords(args: { password: string; hash: string }) {
     const isMatch = await bcrypt.compare(args.password, args.hash);
     return isMatch;
+  }
+
+  async decodeToken(token: string): Promise<any> {
+    try {
+      return await this.jwtService.verifyAsync(token);
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Refresh token is expired!');
+      } else {
+        throw new InternalServerErrorException('Failed to decode token');
+      }
+    }
   }
 
   async createAccessToken(user: User): Promise<string> {
