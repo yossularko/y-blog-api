@@ -3,6 +3,7 @@ import {
   BadRequestException,
   UnauthorizedException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -112,6 +113,30 @@ export class AuthService {
     response.cookie('jwt_auth', access_token, this.configCookie(true));
 
     return { access_token: '' };
+  }
+
+  async revokeRefreshToken(
+    refreshAccessTokenDto: RefreshAccessTokenDto,
+    response: Response,
+  ) {
+    const { refresh_token } = refreshAccessTokenDto;
+    try {
+      const payload = await this.decodeToken(refresh_token);
+      await this.prismaService.refreshToken.update({
+        where: { id: payload.jid },
+        data: { isRevoked: true },
+      });
+
+      response.clearCookie(jwtKey);
+      return { message: 'Token has been revoked' };
+    } catch (error) {
+      if (error.code) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(error.meta?.cause);
+        }
+      }
+      throw new InternalServerErrorException(error);
+    }
   }
 
   async hashPassword(password: string) {
