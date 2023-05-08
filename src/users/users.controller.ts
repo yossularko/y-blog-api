@@ -13,6 +13,8 @@ import { JwtGuard } from 'src/common/guard/jwt.guard';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { IsUserGuard } from 'src/common/guard/is-user.guard';
+import { GetUser } from 'src/common/decorator/get-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller('users')
 @UseGuards(JwtGuard)
@@ -36,8 +38,12 @@ export class UsersController {
   @Roles(1)
   @UseGuards(IsUserGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @GetUser() user: User,
+  ) {
+    return this.usersService.update(id, updateUserDto, user);
   }
 
   @Roles(1)

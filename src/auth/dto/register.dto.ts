@@ -9,6 +9,9 @@ export class RegisterDto extends LoginDto {
   name: string;
 
   @IsOptional()
+  bio: string;
+
+  @IsOptional()
   avaImage: string;
 
   @IsOptional()

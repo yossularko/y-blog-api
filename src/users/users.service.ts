@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -15,7 +16,6 @@ export class UsersService {
     return await this.prismaService.user.findMany({
       select: {
         id: true,
-        email: true,
         role: true,
         profile: true,
       },
@@ -23,7 +23,10 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
-    const item = await this.prismaService.user.findUnique({ where: { id } });
+    const item = await this.prismaService.user.findUnique({
+      where: { id },
+      include: { profile: true },
+    });
 
     if (!item) {
       // optional, you can return null/undefined depending on your use case
@@ -35,13 +38,30 @@ export class UsersService {
     return item;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const { email, role } = updateUserDto;
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    user: User,
+  ): Promise<User> {
+    const { email, role, name, bio, avaImage, bgImage } = updateUserDto;
+
+    if (user.role !== 1 && typeof role === 'number') {
+      throw new ForbiddenException('Cannot update role!');
+    }
+
     try {
-      return await this.prismaService.user.update({
+      const item = await this.prismaService.user.update({
         where: { id },
-        data: { email, role },
+        data: {
+          email,
+          role,
+          profile: { update: { name, bio, avaImage, bgImage } },
+        },
+        include: { profile: true },
       });
+
+      delete item.hashedPassword;
+      return item;
     } catch (error) {
       if (error.code) {
         if (error.code === 'P2025') {
@@ -54,7 +74,14 @@ export class UsersService {
 
   async remove(id: string) {
     try {
-      await this.prismaService.user.delete({ where: { id } });
+      await this.prismaService.user.update({
+        where: { id },
+        data: { profile: { delete: true } },
+        include: { profile: true },
+      });
+      await this.prismaService.user.delete({
+        where: { id },
+      });
       return { message: `User id: ${id} was deleted` };
     } catch (error) {
       if (error.code) {
