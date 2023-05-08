@@ -57,6 +57,12 @@ export class CategoriesService {
       throw new NotFoundException(`Cannot find category id: ${id}`);
     }
 
+    await this.prismaService.category.update({
+      where: { id },
+      data: { articles: { set: [] } },
+      include: { articles: true },
+    });
+
     await this.prismaService.category.delete({ where: { id } });
     await fs.promises.unlink('./public' + item.image);
 
