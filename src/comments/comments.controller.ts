@@ -9,6 +9,7 @@ import {
   UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Roles } from 'src/common/decorator/roles.decorator';
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/common/guard/roles.guard';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
+@ApiTags('Comment')
 @Controller('comments')
 @UseGuards(JwtGuard)
 export class CommentsController {

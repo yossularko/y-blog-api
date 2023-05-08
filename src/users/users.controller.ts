@@ -15,7 +15,9 @@ import { RolesGuard } from 'src/common/guard/roles.guard';
 import { IsUserGuard } from 'src/common/guard/is-user.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { User } from '@prisma/client';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('User')
 @Controller('users')
 @UseGuards(JwtGuard)
 export class UsersController {

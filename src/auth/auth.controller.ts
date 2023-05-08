@@ -7,6 +7,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginQueryDto } from './dto/login-query.dto';
@@ -16,6 +17,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginRes } from './interface/login-res.interface';
 import { RefreshTokenRes } from './interface/refresh-token-res.interface';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

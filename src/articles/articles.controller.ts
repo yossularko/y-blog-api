@@ -13,6 +13,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Roles } from 'src/common/decorator/roles.decorator';
@@ -24,6 +25,7 @@ import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 
+@ApiTags('Article')
 @Controller('articles')
 @UseGuards(JwtGuard)
 export class ArticlesController {
