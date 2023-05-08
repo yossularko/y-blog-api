@@ -6,10 +6,8 @@ import {
   Post,
   Query,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { JwtGuard } from 'src/common/guard/jwt.guard';
 import { AuthService } from './auth.service';
 import { LoginQueryDto } from './dto/login-query.dto';
 import { LoginDto } from './dto/login.dto';
@@ -52,7 +50,6 @@ export class AuthController {
   }
 
   @Patch('revoke')
-  @UseGuards(JwtGuard)
   async revokeRefreshToken(
     @Body() refreshAccessTokenDto: RefreshAccessTokenDto,
     @Res({ passthrough: true }) response: Response,
