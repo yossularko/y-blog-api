@@ -61,7 +61,7 @@ export class AuthController {
   }
 
   @Delete('refresh-token/clear')
-  async clearRefreshToken() {
-    return this.authService.clearRefreshToken();
+  async clearRefreshToken(@Query('userId') userId: string) {
+    return this.authService.clearRefreshToken(userId);
   }
 }

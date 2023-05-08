@@ -139,9 +139,15 @@ export class AuthService {
     }
   }
 
-  async clearRefreshToken() {
-    await this.prismaService.refreshToken.deleteMany();
-    return { message: 'All Refresh Token has been deleted' };
+  async clearRefreshToken(userId?: string) {
+    await this.prismaService.refreshToken.deleteMany({
+      where: userId ? { userId } : undefined,
+    });
+    return {
+      message: `All Refresh Token ${
+        userId ? `userId: ${userId} ` : ''
+      }has been deleted`,
+    };
   }
 
   async hashPassword(password: string) {
