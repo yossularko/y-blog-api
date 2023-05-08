@@ -139,6 +139,11 @@ export class AuthService {
     }
   }
 
+  async clearRefreshToken() {
+    await this.prismaService.refreshToken.deleteMany();
+    return { message: 'All Refresh Token has been deleted' };
+  }
+
   async hashPassword(password: string) {
     const saltOrRounds = 10;
     const hashed = await bcrypt.hash(password, saltOrRounds);

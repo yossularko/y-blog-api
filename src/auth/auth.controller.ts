@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Patch,
   Post,
   Query,
@@ -50,12 +51,17 @@ export class AuthController {
     );
   }
 
-  @Patch('/revoke')
+  @Patch('revoke')
   @UseGuards(JwtGuard)
   async revokeRefreshToken(
     @Body() refreshAccessTokenDto: RefreshAccessTokenDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     return this.authService.revokeRefreshToken(refreshAccessTokenDto, response);
+  }
+
+  @Delete('refresh-token/clear')
+  async clearRefreshToken() {
+    return this.authService.clearRefreshToken();
   }
 }
