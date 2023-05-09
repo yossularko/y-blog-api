@@ -96,35 +96,26 @@ export class ArticlesService {
     const { categoryId } = params;
     const { isSearch, pagginate } = this.generateParamUtil(params);
 
-    const where =
-      categoryId && user.role === 1
-        ? {
-            categoryId,
-            title: isSearch,
-            body: isSearch,
-            tags: isSearch,
-          }
-        : categoryId && user.role !== 1
-        ? {
-            categoryId,
-            authorId: user.id,
-            title: isSearch,
-            body: isSearch,
-            tags: isSearch,
-          }
-        : {
-            title: isSearch,
-            body: isSearch,
-            tags: isSearch,
-          };
+    const where = categoryId
+      ? {
+          categoryId,
+          title: isSearch,
+          body: isSearch,
+          tags: isSearch,
+        }
+      : {
+          title: isSearch,
+          body: isSearch,
+          tags: isSearch,
+        };
 
     const article = await this.prismaService.$transaction([
       this.prismaService.article.count({
-        where: where,
+        where: user.role === 1 ? where : { authorId: user.id, ...where },
       }),
       this.prismaService.article.findMany({
         ...pagginate,
-        where: where,
+        where: user.role === 1 ? where : { authorId: user.id, ...where },
         include: {
           Category: { select: { id: true, name: true, image: true } },
         },
