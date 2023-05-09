@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -59,9 +60,11 @@ model Category {
 
 model Article {
   id              String    @unique   @default(uuid())
+  slug            String    @unique
   title           String
   body            String    @db.Text
   coverImage      String
+  tags            String
 
   comments        Comment[]
 
