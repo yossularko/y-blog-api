@@ -57,7 +57,7 @@ export class ArticlesController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('my-articel')
+  @Get('my-article')
   findAllByUser(@GetUser() user: User, @Query() params: ArticleQueryDto) {
     return this.articlesService.findAllByUser(user, params);
   }
