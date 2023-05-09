@@ -12,7 +12,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({
     credentials: true,
-    origin: clientUrl,
+    origin: [clientUrl, 'http://192.168.0.102:3000'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
   });
