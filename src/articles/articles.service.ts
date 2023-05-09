@@ -11,6 +11,7 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import * as fs from 'fs';
 import { ArticleQueryDto } from './dto/article-query.dto';
+import { Pagination } from 'src/types/main.type';
 
 @Injectable()
 export class ArticlesService {
@@ -40,24 +41,19 @@ export class ArticlesService {
     }
   }
 
-  async findAll(params: ArticleQueryDto): Promise<Article[]> {
+  async findAll(
+    params: ArticleQueryDto,
+  ): Promise<Pagination<{ data: Article[] }>> {
     const { isSearch, pagginate } = this.generateParamUtil(params);
-    return await this.prismaService.article.findMany({
-      ...pagginate,
-      where: {
-        title: isSearch,
-        body: isSearch,
-        tags: isSearch,
-      },
-      include: { Category: { select: { id: true, name: true, image: true } } },
-    });
-  }
-
-  async findAllByUser(user: User, params: ArticleQueryDto): Promise<Article[]> {
-    const { isSearch, pagginate } = this.generateParamUtil(params);
-
-    if (user.role === 1) {
-      return await this.prismaService.article.findMany({
+    const article = await this.prismaService.$transaction([
+      this.prismaService.article.count({
+        where: {
+          title: isSearch,
+          body: isSearch,
+          tags: isSearch,
+        },
+      }),
+      this.prismaService.article.findMany({
         ...pagginate,
         where: {
           title: isSearch,
@@ -67,18 +63,81 @@ export class ArticlesService {
         include: {
           Category: { select: { id: true, name: true, image: true } },
         },
-      });
-    }
-    return await this.prismaService.article.findMany({
-      ...pagginate,
-      where: {
-        authorId: user.id,
-        title: isSearch,
-        body: isSearch,
-        tags: isSearch,
-      },
-      include: { Category: { select: { id: true, name: true, image: true } } },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    const perpage = params.perpage || 20;
+    const total = article[0] ?? 0;
+    const totalPage = this.getTotalPage(total, perpage);
+
+    return {
+      page: params.page || 1,
+      perpage,
+      total,
+      totalPage,
+      data: article[1],
+    };
+  }
+
+  async findAllByUser(
+    user: User,
+    params: ArticleQueryDto,
+  ): Promise<Pagination<{ data: Article[] }>> {
+    const { isSearch, pagginate } = this.generateParamUtil(params);
+    const article = await this.prismaService.$transaction([
+      this.prismaService.article.count({
+        where:
+          user.role === 1
+            ? {
+                title: isSearch,
+                body: isSearch,
+                tags: isSearch,
+              }
+            : {
+                authorId: user.id,
+                title: isSearch,
+                body: isSearch,
+                tags: isSearch,
+              },
+      }),
+      this.prismaService.article.findMany({
+        ...pagginate,
+        where:
+          user.role === 1
+            ? {
+                title: isSearch,
+                body: isSearch,
+                tags: isSearch,
+              }
+            : {
+                authorId: user.id,
+                title: isSearch,
+                body: isSearch,
+                tags: isSearch,
+              },
+        include: {
+          Category: { select: { id: true, name: true, image: true } },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    const perpage = params.perpage || 20;
+    const total = article[0] ?? 0;
+    const totalPage = this.getTotalPage(total, perpage);
+
+    return {
+      page: params.page || 1,
+      perpage: perpage,
+      total,
+      totalPage,
+      data: article[1],
+    };
   }
 
   async findOne(slug: string): Promise<Article> {
@@ -199,11 +258,21 @@ export class ArticlesService {
     const pagginate =
       page && perpage
         ? { skip: (page - 1) * perpage, take: perpage }
-        : { skip: undefined, take: undefined };
+        : { skip: 0, take: 20 };
 
     return {
       isSearch: searchFormat ? { search: searchFormat } : undefined,
       pagginate,
     };
+  }
+
+  getTotalPage(total: number, perpage: number) {
+    const sisaBagi = total % perpage;
+    if (sisaBagi > 0) {
+      const addon = perpage - sisaBagi;
+      const newTotal = total + addon;
+      return newTotal / perpage;
+    }
+    return total / perpage;
   }
 }
