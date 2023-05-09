@@ -11,6 +11,7 @@ import {
   ParseFilePipeBuilder,
   UploadedFile,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
@@ -22,6 +23,7 @@ import { JwtGuard } from 'src/common/guard/jwt.guard';
 import { fileType } from 'src/utils/fileTypeRegExp';
 import { maxSize } from 'src/utils/maxSize';
 import { ArticlesService } from './articles.service';
+import { ArticleQueryDto } from './dto/article-query.dto';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 
@@ -50,38 +52,40 @@ export class ArticlesController {
   }
 
   @Get()
-  findAll() {
-    return this.articlesService.findAll();
+  findAll(@Query() params: ArticleQueryDto) {
+    const { search } = params;
+    return this.articlesService.findAll(search);
   }
 
   @UseGuards(JwtGuard)
   @Get('my-articel')
-  findAllByUser(@GetUser() user: User) {
-    return this.articlesService.findAllByUser(user);
+  findAllByUser(@GetUser() user: User, @Query() params: ArticleQueryDto) {
+    const { search } = params;
+    return this.articlesService.findAllByUser(user, search);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.articlesService.findOne(id);
+  @Get(':slug')
+  findOne(@Param('slug') slug: string) {
+    return this.articlesService.findOne(slug);
   }
 
   @Roles(1)
   @UseGuards(JwtGuard, IsUserGuard)
-  @Patch(':id')
+  @Patch(':slug')
   @UseInterceptors(FileInterceptor('file'))
   update(
-    @Param('id') id: string,
+    @Param('slug') slug: string,
     @Body() updateArticleDto: UpdateArticleDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     console.log('update dto: ', updateArticleDto);
-    return this.articlesService.update(id, updateArticleDto, file);
+    return this.articlesService.update(slug, updateArticleDto, file);
   }
 
   @Roles(1)
   @UseGuards(JwtGuard, IsUserGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.articlesService.remove(id);
+  @Delete(':slug')
+  remove(@Param('slug') slug: string) {
+    return this.articlesService.remove(slug);
   }
 }

@@ -20,13 +20,16 @@ export class ArticlesService {
     file: Express.Multer.File,
     user: User,
   ): Promise<Article> {
-    const { title, body, categoryId } = createArticleDto;
+    const { title, body, categoryId, tags } = createArticleDto;
+    const slug = await this.createSlug(title);
     try {
       return await this.prismaService.article.create({
         data: {
+          slug,
           title,
           body,
           coverImage: `/${folderPath}/${file.filename}`,
+          tags,
           Category: { connect: { id: categoryId } },
           Author: { connect: { id: user.id } },
         },
@@ -36,78 +39,105 @@ export class ArticlesService {
     }
   }
 
-  async findAll(): Promise<Article[]> {
+  async findAll(search: string): Promise<Article[]> {
+    const searchFormat: string = search?.replace(/[\s\n\t]/g, ' | ') || '';
     return await this.prismaService.article.findMany({
+      where: {
+        title: searchFormat ? { search: searchFormat } : undefined,
+        body: searchFormat ? { search: searchFormat } : undefined,
+        tags: searchFormat ? { search: searchFormat } : undefined,
+      },
       include: { Category: { select: { id: true, name: true, image: true } } },
     });
   }
 
-  async findAllByUser(user: User): Promise<Article[]> {
+  async findAllByUser(user: User, search: string): Promise<Article[]> {
+    const searchFormat: string = search?.replace(/[\s\n\t]/g, ' | ') || '';
+
     if (user.role === 1) {
       return await this.prismaService.article.findMany({
+        where: {
+          title: searchFormat ? { search: searchFormat } : undefined,
+          body: searchFormat ? { search: searchFormat } : undefined,
+          tags: searchFormat ? { search: searchFormat } : undefined,
+        },
         include: {
           Category: { select: { id: true, name: true, image: true } },
         },
       });
     }
     return await this.prismaService.article.findMany({
-      where: { authorId: user.id },
+      where: {
+        authorId: user.id,
+        title: searchFormat ? { search: searchFormat } : undefined,
+        body: searchFormat ? { search: searchFormat } : undefined,
+        tags: searchFormat ? { search: searchFormat } : undefined,
+      },
       include: { Category: { select: { id: true, name: true, image: true } } },
     });
   }
 
-  async findOne(id: string): Promise<Article> {
-    const response = await this.prismaService.article.findUnique({
-      where: { id },
-      include: {
-        Category: { select: { id: true, name: true, image: true } },
-        Author: { select: { id: true, profile: true } },
-        comments: {
-          select: {
-            id: true,
-            body: true,
-            images: true,
-            createdAt: true,
-            User: {
-              select: {
-                id: true,
-                profile: { select: { name: true, avaImage: true } },
+  async findOne(slug: string): Promise<Article> {
+    try {
+      const response = await this.prismaService.article.findUnique({
+        where: { slug },
+        include: {
+          Category: { select: { id: true, name: true, image: true } },
+          Author: { select: { id: true, profile: true } },
+          comments: {
+            select: {
+              id: true,
+              body: true,
+              images: true,
+              createdAt: true,
+              User: {
+                select: {
+                  id: true,
+                  profile: { select: { name: true, avaImage: true } },
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    delete response.authorId;
-    delete response.categoryId;
+      if (!response) {
+        throw new NotFoundException(`Cannot find article ${slug}`);
+      }
 
-    return response;
+      delete response.authorId;
+      delete response.categoryId;
+
+      return response;
+    } catch (error) {
+      throw new HttpException(error, 500, { cause: new Error(error) });
+    }
   }
 
   async update(
-    id: string,
+    slug: string,
     updateArticleDto: UpdateArticleDto,
     file: Express.Multer.File,
   ): Promise<Article> {
-    const { title, body, categoryId } = updateArticleDto;
+    const { title, body, categoryId, tags } = updateArticleDto;
     try {
       if (!categoryId) {
         throw new BadRequestException('Category Id tidak boleh Kosong');
       }
 
-      const item = await this.findOne(id);
+      const item = await this.findOne(slug);
 
       if (!item) {
-        throw new NotFoundException(`Cannot find article id: ${id}`);
+        throw new NotFoundException(`Cannot find article ${slug}`);
       }
 
       const updateItem = await this.prismaService.article.update({
-        where: { id },
+        where: { slug },
         data: {
           title,
           body,
           coverImage: file ? `/${folderPath}/${file.filename}` : undefined,
+          tags,
           Category: { connect: { id: categoryId } },
         },
       });
@@ -121,16 +151,40 @@ export class ArticlesService {
     }
   }
 
-  async remove(id: string) {
-    const item = await this.findOne(id);
+  async remove(slug: string) {
+    const item = await this.findOne(slug);
 
     if (!item) {
-      throw new NotFoundException(`Cannot find category id: ${id}`);
+      throw new NotFoundException(`Cannot find category ${slug}`);
     }
 
-    await this.prismaService.article.delete({ where: { id } });
+    await this.prismaService.article.delete({ where: { slug } });
     await fs.promises.unlink('./public' + item.coverImage);
 
-    return { message: `Article ${id} has been deleted` };
+    return { message: `Article ${slug} has been deleted` };
+  }
+
+  async createSlug(title: string): Promise<string> {
+    const initialSlug = title
+      .toLowerCase()
+      .replace(/[\s\n\t]/g, '-')
+      .replace(/['",.;:@#$%^&*]/g, '');
+    const slugs = await this.prismaService.article.findMany({
+      select: { slug: true },
+    });
+
+    const isSlugExist = slugs.some((itemSlug) => itemSlug.slug === initialSlug);
+
+    if (isSlugExist) {
+      const splited = initialSlug.split('-');
+      const lastSplit = splited[splited.length - 1];
+      const isNanLastSplit = Number.isNaN(+lastSplit);
+      const slug = isNanLastSplit
+        ? [...splited, 2].join('-')
+        : [...splited.slice(0, splited.length - 2), +lastSplit + 1].join('-');
+      return slug;
+    }
+
+    return initialSlug;
   }
 }

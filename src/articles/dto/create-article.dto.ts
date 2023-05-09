@@ -13,4 +13,8 @@ export class CreateArticleDto {
   @ApiProperty()
   @IsNotEmpty()
   categoryId: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  tags: string;
 }
