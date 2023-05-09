@@ -44,22 +44,29 @@ export class ArticlesService {
   async findAll(
     params: ArticleQueryDto,
   ): Promise<Pagination<{ data: Article[] }>> {
+    const { categoryId } = params;
     const { isSearch, pagginate } = this.generateParamUtil(params);
-    const article = await this.prismaService.$transaction([
-      this.prismaService.article.count({
-        where: {
+
+    const where = categoryId
+      ? {
+          categoryId,
           title: isSearch,
           body: isSearch,
           tags: isSearch,
-        },
+        }
+      : {
+          title: isSearch,
+          body: isSearch,
+          tags: isSearch,
+        };
+
+    const article = await this.prismaService.$transaction([
+      this.prismaService.article.count({
+        where: where,
       }),
       this.prismaService.article.findMany({
         ...pagginate,
-        where: {
-          title: isSearch,
-          body: isSearch,
-          tags: isSearch,
-        },
+        where: where,
         include: {
           Category: { select: { id: true, name: true, image: true } },
         },
@@ -86,38 +93,38 @@ export class ArticlesService {
     user: User,
     params: ArticleQueryDto,
   ): Promise<Pagination<{ data: Article[] }>> {
+    const { categoryId } = params;
     const { isSearch, pagginate } = this.generateParamUtil(params);
+
+    const where =
+      categoryId && user.role === 1
+        ? {
+            categoryId,
+            title: isSearch,
+            body: isSearch,
+            tags: isSearch,
+          }
+        : categoryId && user.role !== 1
+        ? {
+            categoryId,
+            authorId: user.id,
+            title: isSearch,
+            body: isSearch,
+            tags: isSearch,
+          }
+        : {
+            title: isSearch,
+            body: isSearch,
+            tags: isSearch,
+          };
+
     const article = await this.prismaService.$transaction([
       this.prismaService.article.count({
-        where:
-          user.role === 1
-            ? {
-                title: isSearch,
-                body: isSearch,
-                tags: isSearch,
-              }
-            : {
-                authorId: user.id,
-                title: isSearch,
-                body: isSearch,
-                tags: isSearch,
-              },
+        where: where,
       }),
       this.prismaService.article.findMany({
         ...pagginate,
-        where:
-          user.role === 1
-            ? {
-                title: isSearch,
-                body: isSearch,
-                tags: isSearch,
-              }
-            : {
-                authorId: user.id,
-                title: isSearch,
-                body: isSearch,
-                tags: isSearch,
-              },
+        where: where,
         include: {
           Category: { select: { id: true, name: true, image: true } },
         },

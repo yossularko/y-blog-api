@@ -5,6 +5,10 @@ import { IsOptional } from 'class-validator';
 export class ArticleQueryDto {
   @ApiProperty({ required: false })
   @IsOptional()
+  categoryId: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   search: string;
 
   @ApiProperty({ required: false, default: 1 })
