@@ -53,15 +53,13 @@ export class ArticlesController {
 
   @Get()
   findAll(@Query() params: ArticleQueryDto) {
-    const { search } = params;
-    return this.articlesService.findAll(search);
+    return this.articlesService.findAll(params);
   }
 
   @UseGuards(JwtGuard)
   @Get('my-articel')
   findAllByUser(@GetUser() user: User, @Query() params: ArticleQueryDto) {
-    const { search } = params;
-    return this.articlesService.findAllByUser(user, search);
+    return this.articlesService.findAllByUser(user, params);
   }
 
   @Get(':slug')

@@ -10,6 +10,7 @@ import folderPath from 'src/utils/folderPath';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import * as fs from 'fs';
+import { ArticleQueryDto } from './dto/article-query.dto';
 
 @Injectable()
 export class ArticlesService {
@@ -39,27 +40,29 @@ export class ArticlesService {
     }
   }
 
-  async findAll(search: string): Promise<Article[]> {
-    const searchFormat: string = search?.replace(/[\s\n\t]/g, ' | ') || '';
+  async findAll(params: ArticleQueryDto): Promise<Article[]> {
+    const { isSearch, pagginate } = this.generateParamUtil(params);
     return await this.prismaService.article.findMany({
+      ...pagginate,
       where: {
-        title: searchFormat ? { search: searchFormat } : undefined,
-        body: searchFormat ? { search: searchFormat } : undefined,
-        tags: searchFormat ? { search: searchFormat } : undefined,
+        title: isSearch,
+        body: isSearch,
+        tags: isSearch,
       },
       include: { Category: { select: { id: true, name: true, image: true } } },
     });
   }
 
-  async findAllByUser(user: User, search: string): Promise<Article[]> {
-    const searchFormat: string = search?.replace(/[\s\n\t]/g, ' | ') || '';
+  async findAllByUser(user: User, params: ArticleQueryDto): Promise<Article[]> {
+    const { isSearch, pagginate } = this.generateParamUtil(params);
 
     if (user.role === 1) {
       return await this.prismaService.article.findMany({
+        ...pagginate,
         where: {
-          title: searchFormat ? { search: searchFormat } : undefined,
-          body: searchFormat ? { search: searchFormat } : undefined,
-          tags: searchFormat ? { search: searchFormat } : undefined,
+          title: isSearch,
+          body: isSearch,
+          tags: isSearch,
         },
         include: {
           Category: { select: { id: true, name: true, image: true } },
@@ -67,11 +70,12 @@ export class ArticlesService {
       });
     }
     return await this.prismaService.article.findMany({
+      ...pagginate,
       where: {
         authorId: user.id,
-        title: searchFormat ? { search: searchFormat } : undefined,
-        body: searchFormat ? { search: searchFormat } : undefined,
-        tags: searchFormat ? { search: searchFormat } : undefined,
+        title: isSearch,
+        body: isSearch,
+        tags: isSearch,
       },
       include: { Category: { select: { id: true, name: true, image: true } } },
     });
@@ -186,5 +190,20 @@ export class ArticlesService {
     }
 
     return initialSlug;
+  }
+
+  generateParamUtil(params: ArticleQueryDto) {
+    const { search, page, perpage } = params;
+
+    const searchFormat: string = search?.replace(/[\s\n\t]/g, ' | ') || '';
+    const pagginate =
+      page && perpage
+        ? { skip: (page - 1) * perpage, take: perpage }
+        : { skip: undefined, take: undefined };
+
+    return {
+      isSearch: searchFormat ? { search: searchFormat } : undefined,
+      pagginate,
+    };
   }
 }
