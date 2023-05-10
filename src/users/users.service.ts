@@ -85,11 +85,11 @@ export class UsersService {
 
       delete item.hashedPassword;
 
-      if (avatar) {
+      if (avatar && foundUser.profile.avaImage) {
         await fs.promises.unlink('./public' + foundUser.profile.avaImage);
       }
 
-      if (background) {
+      if (background && foundUser.profile.bgImage) {
         await fs.promises.unlink('./public' + foundUser.profile.bgImage);
       }
       return item;
