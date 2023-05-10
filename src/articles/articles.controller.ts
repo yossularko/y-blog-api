@@ -62,6 +62,11 @@ export class ArticlesController {
     return this.articlesService.findAllByUser(user, params);
   }
 
+  @Get('slugs')
+  fibdSlugs() {
+    return this.articlesService.findSlugs();
+  }
+
   @Get(':slug')
   findOne(@Param('slug') slug: string) {
     return this.articlesService.findOne(slug);

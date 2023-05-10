@@ -138,6 +138,14 @@ export class ArticlesService {
     };
   }
 
+  async findSlugs() {
+    return await this.prismaService.article.findMany({
+      skip: 0,
+      take: 100,
+      select: { slug: true },
+    });
+  }
+
   async findOne(slug: string): Promise<Article> {
     try {
       const response = await this.prismaService.article.findUnique({
