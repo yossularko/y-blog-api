@@ -8,5 +8,5 @@ export class CreateCommentDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  articleId: string;
+  articleSlug: string;
 }

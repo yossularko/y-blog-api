@@ -14,7 +14,7 @@ export class CommentsService {
     files: Array<Express.Multer.File>,
     user: User,
   ): Promise<Comment> {
-    const { body, articleId } = createCommentDto;
+    const { body, articleSlug } = createCommentDto;
 
     try {
       return await this.prismaService.comment.create({
@@ -23,7 +23,7 @@ export class CommentsService {
           images: files
             ? files.map((file) => `/${folderPath}/${file.filename}`)
             : [],
-          Article: { connect: { id: articleId } },
+          Article: { connect: { slug: articleSlug } },
           User: { connect: { id: user.id } },
         },
       });
