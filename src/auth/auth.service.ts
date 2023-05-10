@@ -59,6 +59,7 @@ export class AuthService {
 
     const foundUser = await this.prismaService.user.findUnique({
       where: { email },
+      include: { profile: true },
     });
 
     if (!foundUser) {
@@ -77,13 +78,15 @@ export class AuthService {
     const access_token = await this.createAccessToken(foundUser);
     const refresh_token = await this.createRefreshToken(foundUser);
 
+    delete foundUser.hashedPassword;
+
     if (isMobile === 'true') {
-      return { access_token, refresh_token };
+      return { token: { access_token, refresh_token }, user: foundUser };
     }
 
     res.cookie(jwtKey, access_token, this.configCookie(true));
 
-    return { access_token: '', refresh_token };
+    return { token: { access_token: '', refresh_token }, user: foundUser };
   }
 
   async refreshAccessToken(

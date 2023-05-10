@@ -1,4 +1,9 @@
+import { User } from '@prisma/client';
+
 export interface LoginRes {
-  access_token: string;
-  refresh_token: string;
+  token: {
+    access_token: string;
+    refresh_token: string;
+  };
+  user: User;
 }
