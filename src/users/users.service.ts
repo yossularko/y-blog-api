@@ -9,6 +9,7 @@ import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import folderPath from 'src/utils/folderPath';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as fs from 'fs';
 
 @Injectable()
 export class UsersService {
@@ -24,7 +25,7 @@ export class UsersService {
     });
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string) {
     const item = await this.prismaService.user.findUnique({
       where: { id },
       include: { profile: true },
@@ -32,7 +33,7 @@ export class UsersService {
 
     if (!item) {
       // optional, you can return null/undefined depending on your use case
-      throw new NotFoundException(`Item id ${id} is not found`);
+      throw new NotFoundException(`User id ${id} is not found`);
     }
 
     delete item.hashedPassword;
@@ -59,6 +60,8 @@ export class UsersService {
       throw new ForbiddenException('Cannot update email!');
     }
 
+    const foundUser = await this.findOne(id);
+
     const avatar = files.avaImage
       ? `/${folderPath}/${files.avaImage[0].filename}`
       : undefined;
@@ -81,6 +84,14 @@ export class UsersService {
       });
 
       delete item.hashedPassword;
+
+      if (avatar) {
+        await fs.promises.unlink('./public' + foundUser.profile.avaImage);
+      }
+
+      if (background) {
+        await fs.promises.unlink('./public' + foundUser.profile.bgImage);
+      }
       return item;
     } catch (error) {
       throw new HttpException(error, 500, { cause: new Error(error) });
