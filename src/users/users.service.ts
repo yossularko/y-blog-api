@@ -1,11 +1,13 @@
 import {
   ForbiddenException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import folderPath from 'src/utils/folderPath';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
@@ -41,13 +43,29 @@ export class UsersService {
   async update(
     id: string,
     updateUserDto: UpdateUserDto,
+    files: {
+      avaImage?: Express.Multer.File[];
+      bgImage?: Express.Multer.File[];
+    },
     user: User,
   ): Promise<User> {
-    const { email, role, name, bio, avaImage, bgImage } = updateUserDto;
+    const { email, role, name, bio } = updateUserDto;
 
     if (user.role !== 1 && typeof role === 'number') {
       throw new ForbiddenException('Cannot update role!');
     }
+
+    if (email && user.role !== 1) {
+      throw new ForbiddenException('Cannot update email!');
+    }
+
+    const avatar = files.avaImage
+      ? `/${folderPath}/${files.avaImage[0].filename}`
+      : undefined;
+
+    const background = files.bgImage
+      ? `/${folderPath}/${files.bgImage[0].filename}`
+      : undefined;
 
     try {
       const item = await this.prismaService.user.update({
@@ -55,7 +73,9 @@ export class UsersService {
         data: {
           email,
           role,
-          profile: { update: { name, bio, avaImage, bgImage } },
+          profile: {
+            update: { name, bio, avaImage: avatar, bgImage: background },
+          },
         },
         include: { profile: true },
       });
@@ -63,12 +83,7 @@ export class UsersService {
       delete item.hashedPassword;
       return item;
     } catch (error) {
-      if (error.code) {
-        if (error.code === 'P2025') {
-          throw new NotFoundException(error.meta?.cause);
-        }
-      }
-      throw new InternalServerErrorException(error);
+      throw new HttpException(error, 500, { cause: new Error(error) });
     }
   }
 

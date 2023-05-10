@@ -16,11 +16,11 @@ export class RegisterDto extends LoginDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  avaImage: string;
+  avaImage: any;
 
   @ApiProperty({ required: false })
   @IsOptional()
-  bgImage: string;
+  bgImage: any;
 
   @ApiProperty({ required: false, default: 0 })
   @IsOptional()

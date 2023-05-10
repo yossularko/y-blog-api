@@ -6,6 +6,8 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -16,6 +18,8 @@ import { IsUserGuard } from 'src/common/guard/is-user.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { User } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { configFileInterceptor } from 'src/utils/configFileInterceptor';
 
 @ApiTags('User')
 @Controller('users')
@@ -40,12 +44,26 @@ export class UsersController {
   @Roles(1)
   @UseGuards(IsUserGuard)
   @Patch(':id')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'avaImage', maxCount: 1 },
+        { name: 'bgImage', maxCount: 1 },
+      ],
+      configFileInterceptor(),
+    ),
+  )
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @UploadedFiles()
+    files: {
+      avaImage?: Express.Multer.File[];
+      bgImage?: Express.Multer.File[];
+    },
     @GetUser() user: User,
   ) {
-    return this.usersService.update(id, updateUserDto, user);
+    return this.usersService.update(id, updateUserDto, files, user);
   }
 
   @Roles(1)
